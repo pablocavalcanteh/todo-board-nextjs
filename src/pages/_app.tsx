@@ -3,11 +3,15 @@ import { Header } from "../components/Header";
 
 import "../styles/global.scss";
 
+import { SessionProvider } from "next-auth/react";
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
-      <Header />
-      <Component {...pageProps} />
+      <SessionProvider session={pageProps.session} refetchInterval={5 * 60}>
+        <Header />
+        <Component {...pageProps} />
+      </SessionProvider>
     </>
   );
 }
