@@ -5,16 +5,58 @@ import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from "react-icons/fi";
 import { SupportButton } from "../../components/SupportButton";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/react";
+import { FormEvent, useState } from "react";
 
-export default function Board() {
+import db from "../../services/firebase"
+import { addDoc, collection } from "firebase/firestore";
+
+interface BoardProps {
+  user: {
+    name: string;
+    id: string;
+  };
+}
+
+export default function Board({ user }: BoardProps) {
+
+  const [taskDescription, setTaskDescription] = useState("");
+
+
+  async function handleAddTask(e: FormEvent) {
+
+    e.preventDefault();
+
+    if (!taskDescription) {
+      alert('Type a task!')
+      return;
+    }
+
+    await addDoc(collection(db, "tasks"), {
+      createdAt: new Date(),
+      task: taskDescription,
+      userId: user.id,
+      name: user.name,
+    }).then((doc) => {
+      console.log('okokokokok')
+    }).catch((err) => {
+      console.log(err)
+    })
+
+  }
+
   return (
     <>
       <Head>
         <title>My tasks</title>
       </Head>
       <main className={styles.container}>
-        <form>
-          <input type="text" placeholder="Type your task..." />
+        <form onSubmit={handleAddTask}>
+          <input
+            type="text"
+            placeholder="Type your task..."
+            value={taskDescription}
+            onChange={(e) => setTaskDescription(e.target.value)}
+          />
           <button type="submit">
             <FiPlus size={25} color="#17181f" />
           </button>
@@ -57,23 +99,26 @@ export default function Board() {
   );
 }
 
-
-export const getServerSideProps: GetServerSideProps = async ({req, res}) => {
-
-  const session: any = await getSession({req})
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  const session: any = await getSession({ req });
 
   if (!session?.id) {
     return {
       redirect: {
         destination: "/",
-        permanent: false
-      }
-    }
+        permanent: false,
+      },
+    };
   }
+
+  const user = {
+    name: session?.user.name,
+    id: session?.id,
+  };
 
   return {
     props: {
-
-    }
-  }
-}
+      user,
+    },
+  };
+};
