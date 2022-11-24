@@ -13,23 +13,20 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async session({session, token, user}) {
-
+    async session({ session, token, user }: any) {
       try {
         return {
           ...session,
-          id: token.sub
-        }
-      } catch(err) {
+          id: token.sub,
+        };
+      } catch (err) {
         return {
           ...session,
-          id: null
-        }
+          id: null,
+        };
       }
-      
     },
-    async signIn({ user }) {
-
+    async signIn({ user }: any) {
       const { email } = user;
 
       try {
