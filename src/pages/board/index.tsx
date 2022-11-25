@@ -7,8 +7,10 @@ import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/react";
 import { FormEvent, useState } from "react";
 
-import db from "../../services/firebase"
+import db from "../../services/firebase";
 import { addDoc, collection } from "firebase/firestore";
+import { format } from "date-fns";
+import Link from "next/link";
 
 interface BoardProps {
   user: {
@@ -18,30 +20,39 @@ interface BoardProps {
 }
 
 export default function Board({ user }: BoardProps) {
-
-  const [taskDescription, setTaskDescription] = useState("");
-
+  const [task, setTask] = useState("");
+  const [taskList, setTaskList] = useState<any>([]);
 
   async function handleAddTask(e: FormEvent) {
-
     e.preventDefault();
 
-    if (!taskDescription) {
-      alert('Type a task!')
+    if (!task) {
+      alert("Type a task!");
       return;
     }
 
     await addDoc(collection(db, "tasks"), {
       createdAt: new Date(),
-      task: taskDescription,
+      task: task,
       userId: user.id,
       name: user.name,
-    }).then((doc) => {
-      console.log('okokokokok')
-    }).catch((err) => {
-      console.log(err)
     })
+      .then((doc) => {
+        let data = {
+          id: doc.id,
+          createdAt: new Date(),
+          createdAtFormatted: format(new Date(), "dd MMMM yyyy"),
+          task: task,
+          userId: user.id,
+          name: user.name,
+        };
 
+        setTaskList([...taskList, data]);
+        setTask("");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   return (
@@ -54,8 +65,8 @@ export default function Board({ user }: BoardProps) {
           <input
             type="text"
             placeholder="Type your task..."
-            value={taskDescription}
-            onChange={(e) => setTaskDescription(e.target.value)}
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
           />
           <button type="submit">
             <FiPlus size={25} color="#17181f" />
@@ -64,25 +75,30 @@ export default function Board({ user }: BoardProps) {
         <h1>You have 2 tasks...</h1>
 
         <section>
-          <article className={styles.taskList}>
-            <p>Thats only test.</p>
-            <div className={styles.actions}>
-              <div>
+          {taskList.map((task) => (
+            <article key={task.id} className={styles.taskList}>
+              <Link href={`/board/${task.id}`}>
+                <p>{task.task}</p>
+              </Link>
+
+              <div className={styles.actions}>
                 <div>
-                  <FiCalendar size={20} color="#ffb800" />
-                  <time>Today</time>
+                  <div>
+                    <FiCalendar size={20} color="#ffb800" />
+                    <time>{task.createdAtFormatted}</time>
+                  </div>
+                  <button>
+                    <FiEdit2 size={20} color="#fff" />
+                    <span>Edit</span>
+                  </button>
                 </div>
                 <button>
-                  <FiEdit2 size={20} color="#fff" />
-                  <span>Edit</span>
+                  <FiTrash size={20} color="#ff3636" />
+                  <span>Delete</span>
                 </button>
               </div>
-              <button>
-                <FiTrash size={20} color="#ff3636" />
-                <span>Delete</span>
-              </button>
-            </div>
-          </article>
+            </article>
+          ))}
         </section>
       </main>
 
