@@ -11,6 +11,8 @@ import db from "../../services/firebase";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   orderBy,
   query,
@@ -72,6 +74,18 @@ export default function Board({ user, data }: BoardProps) {
       });
   }
 
+  async function handleDelete(id: string) {
+    await deleteDoc(doc(db, "tasks", id))
+      .then(() => {
+        let taskDeleted = taskList.filter((t) => {
+          return t.id !== id;
+        });
+
+        setTaskList(taskDeleted);
+      })
+      .catch(() => alert("Delete failed!"));
+  }
+
   return (
     <>
       <Head>
@@ -111,7 +125,7 @@ export default function Board({ user, data }: BoardProps) {
                     <span>Edit</span>
                   </button>
                 </div>
-                <button>
+                <button onClick={() => handleDelete(task.id)}>
                   <FiTrash size={20} color="#ff3636" />
                   <span>Delete</span>
                 </button>
@@ -147,7 +161,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   }
 
   const tasks = await getDocs(
-    query(collection(db, "tasks"), where("userId", "==", session.id),orderBy("createdAt", "asc"))
+    query(
+      collection(db, "tasks"),
+      where("userId", "==", session.id),
+      orderBy("createdAt", "asc")
+    )
   )
     .then((tasksList) => {
       return tasksList.docs.map((t) => {
