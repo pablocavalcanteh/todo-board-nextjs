@@ -8,20 +8,37 @@ import { getSession } from "next-auth/react";
 import { FormEvent, useState } from "react";
 
 import db from "../../services/firebase";
-import { addDoc, collection } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { format } from "date-fns";
 import Link from "next/link";
+
+type Task = {
+  id: string;
+  createdAt: string | Date;
+  createdAtFormatted?: string;
+  task: string;
+  userId: string;
+  name: string;
+};
 
 interface BoardProps {
   user: {
     name: string;
     id: string;
   };
+  data: string;
 }
 
-export default function Board({ user }: BoardProps) {
+export default function Board({ user, data }: BoardProps) {
   const [task, setTask] = useState("");
-  const [taskList, setTaskList] = useState<any>([]);
+  const [taskList, setTaskList] = useState<Task[]>(JSON.parse(data));
 
   async function handleAddTask(e: FormEvent) {
     e.preventDefault();
@@ -72,7 +89,9 @@ export default function Board({ user }: BoardProps) {
             <FiPlus size={25} color="#17181f" />
           </button>
         </form>
-        <h1>You have 2 tasks...</h1>
+        <h1>
+          You have {taskList.length} {taskList.length === 1 ? "task" : "tasks"}
+        </h1>
 
         <section>
           {taskList.map((task) => (
@@ -127,6 +146,25 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     };
   }
 
+  const tasks = await getDocs(
+    query(collection(db, "tasks"), where("userId", "==", session.id),orderBy("createdAt", "asc"))
+  )
+    .then((tasksList) => {
+      return tasksList.docs.map((t) => {
+        return {
+          id: t.id,
+          createdAtFormatted: format(
+            t.data().createdAt.toDate(),
+            "dd MMMM yyyy"
+          ),
+          ...t.data(),
+        };
+      });
+    })
+    .catch((err) => console.log(err));
+
+  const tasksDbJson = JSON.stringify(tasks);
+
   const user = {
     name: session?.user.name,
     id: session?.id,
@@ -135,6 +173,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   return {
     props: {
       user,
+      data: tasksDbJson,
     },
   };
 };
