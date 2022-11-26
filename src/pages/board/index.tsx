@@ -1,7 +1,14 @@
 import Head from "next/head";
 import styles from "./styles.module.scss";
 
-import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from "react-icons/fi";
+import {
+  FiPlus,
+  FiCalendar,
+  FiEdit2,
+  FiTrash,
+  FiClock,
+  FiX,
+} from "react-icons/fi";
 import { SupportButton } from "../../components/SupportButton";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/react";
@@ -16,6 +23,7 @@ import {
   getDocs,
   orderBy,
   query,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { format } from "date-fns";
@@ -41,12 +49,29 @@ interface BoardProps {
 export default function Board({ user, data }: BoardProps) {
   const [task, setTask] = useState("");
   const [taskList, setTaskList] = useState<Task[]>(JSON.parse(data));
+  const [taskEdit, setTaskEdit] = useState<Task | null | undefined>(null);
 
   async function handleAddTask(e: FormEvent) {
     e.preventDefault();
 
     if (!task) {
       alert("Type a task!");
+      return;
+    }
+
+    if (taskEdit) {
+      await updateDoc(doc(db, "tasks", taskEdit.id), {
+        task: task,
+      }).then(() => {
+        let data = taskList;
+        let taskIndex = taskList.findIndex((t) => t.id === taskEdit.id);
+        data[taskIndex].task = task;
+
+        setTaskList(data);
+        setTaskEdit(null);
+        setTask("");
+      });
+
       return;
     }
 
@@ -86,12 +111,30 @@ export default function Board({ user, data }: BoardProps) {
       .catch(() => alert("Delete failed!"));
   }
 
+  function handleEditCancel() {
+    setTask("");
+    setTaskEdit(null);
+  }
+
+  async function handleEdit(task: Task) {
+    setTask(task.task);
+    setTaskEdit(task);
+  }
+
   return (
     <>
       <Head>
         <title>My tasks</title>
       </Head>
       <main className={styles.container}>
+        {taskEdit && (
+          <span className={styles.warn}>
+            <button onClick={() => handleEditCancel()}>
+              <FiX size={30} color="#ff3636" />
+            </button>
+            Editing...
+          </span>
+        )}
         <form onSubmit={handleAddTask}>
           <input
             type="text"
@@ -120,7 +163,7 @@ export default function Board({ user, data }: BoardProps) {
                     <FiCalendar size={20} color="#ffb800" />
                     <time>{task.createdAtFormatted}</time>
                   </div>
-                  <button>
+                  <button onClick={() => handleEdit(task)}>
                     <FiEdit2 size={20} color="#fff" />
                     <span>Edit</span>
                   </button>
