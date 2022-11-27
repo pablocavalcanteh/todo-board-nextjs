@@ -4,7 +4,7 @@ import styles from "./task.module.scss";
 import { FiCalendar } from "react-icons/fi";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/react";
-import { doc, getDoc } from "firebase/firestore";
+import { connectFirestoreEmulator, doc, getDoc } from "firebase/firestore";
 
 import db from "../../services/firebase";
 import { format } from "date-fns";
@@ -49,10 +49,8 @@ export const getServerSideProps: GetServerSideProps = async ({
   params,
 }) => {
 
-  const {id} = params;
-  const session = await getSession({req});
-
-  console.log(session)
+  const {id} = params!;
+  const session: any = await getSession({req});
 
   if (!session?.vip) {
     return {

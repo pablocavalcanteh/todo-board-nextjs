@@ -12,7 +12,7 @@ import { useState } from "react";
 interface DonateProps {
   user: {
     name: string;
-    id: string;
+    id?: string;
     image: string;
   };
 }
@@ -22,7 +22,7 @@ export default function Donate({ user }: DonateProps) {
 
   async function handleSaveDonate() {
 
-    await setDoc(doc(db, "users", user.id), {
+    await setDoc(doc(db, "users", user.id!), {
       donate: true,
       lastDonate: new Date(),
       image: user.image,
@@ -80,9 +80,8 @@ export default function Donate({ user }: DonateProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const session = await getSession({ req });
-
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  const session: any = await getSession({req});
 
   if (!session?.id) {
     return {
