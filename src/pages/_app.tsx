@@ -16,7 +16,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <SessionProvider session={pageProps.session} refetchInterval={5 * 60}>
-        <PayPalScriptProvider options={options}>
+        <PayPalScriptProvider options={options!}>
           <Header />
           <Component {...pageProps} />
         </PayPalScriptProvider>
