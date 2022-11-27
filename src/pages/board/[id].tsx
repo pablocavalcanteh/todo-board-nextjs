@@ -61,7 +61,6 @@ export const getServerSideProps: GetServerSideProps = async ({
     }
   }
 
-
   const data = await getDoc(doc(db, "tasks", String(id))).then((snapshot: any) => {
     const data = {
       id: snapshot.id,
