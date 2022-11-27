@@ -53,7 +53,7 @@ export default function Donate({ user }: DonateProps) {
 
         <h1>Be an supporter this project 🏆.</h1>
         <h3>
-          Contribute to just <span>$1.00</span>
+          Contribute to just <span>R$ 1,00</span>
         </h3>
         <strong>Show up at our home. Get you exclusive features!</strong>
 
@@ -83,6 +83,7 @@ export default function Donate({ user }: DonateProps) {
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const session = await getSession({ req });
 
+
   if (!session?.id) {
     return {
       redirect: {
@@ -94,7 +95,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 
   const user = {
     name: session?.user?.name,
-    id: session?.id,
+    id: session?.id!,
     image: session?.user?.image,
   };
 

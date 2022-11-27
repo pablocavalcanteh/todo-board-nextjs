@@ -26,8 +26,9 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { format } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import Link from "next/link";
+import { ptBR } from "date-fns/locale";
 
 type Task = {
   id: string;
@@ -42,11 +43,14 @@ interface BoardProps {
   user: {
     name: string;
     id: string;
+    vip: boolean;
+    lastDonate: string | Date;
   };
   data: string;
 }
 
 export default function Board({ user, data }: BoardProps) {
+
   const [task, setTask] = useState("");
   const [taskList, setTaskList] = useState<Task[]>(JSON.parse(data));
   const [taskEdit, setTaskEdit] = useState<Task | null | undefined>(null);
@@ -163,10 +167,12 @@ export default function Board({ user, data }: BoardProps) {
                     <FiCalendar size={20} color="#ffb800" />
                     <time>{task.createdAtFormatted}</time>
                   </div>
-                  <button onClick={() => handleEdit(task)}>
-                    <FiEdit2 size={20} color="#fff" />
-                    <span>Edit</span>
-                  </button>
+                  {user.vip && (
+                    <button onClick={() => handleEdit(task)}>
+                      <FiEdit2 size={20} color="#fff" />
+                      <span>Edit</span>
+                    </button>
+                  )}
                 </div>
                 <button onClick={() => handleDelete(task.id)}>
                   <FiTrash size={20} color="#ff3636" />
@@ -178,13 +184,15 @@ export default function Board({ user, data }: BoardProps) {
         </section>
       </main>
 
-      <div className={styles.vipContainer}>
-        <h3>Thanks for supporting this project.</h3>
-        <div>
-          <FiClock size={28} color="#fff" />
-          <time>Last donation has been 3 days...</time>
+      {user.vip && (
+        <div className={styles.vipContainer}>
+          <h3>Thanks for supporting this project.</h3>
+          <div>
+            <FiClock size={28} color="#fff" />
+            <time>Last donation has been {formatDistance(new Date(user.lastDonate), new Date(), {locale: ptBR})}</time>
+          </div>
         </div>
-      </div>
+      )}
 
       <SupportButton />
     </>
@@ -229,6 +237,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const user = {
     name: session?.user.name,
     id: session?.id,
+    vip: session?.vip,
+    lastDonate: session?.lastDonate ?? null,
   };
 
   return {
