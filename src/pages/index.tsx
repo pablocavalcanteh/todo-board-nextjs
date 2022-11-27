@@ -1,10 +1,26 @@
+import { collection, getDocs } from "firebase/firestore";
 import { GetStaticProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import { useState } from "react";
 
+import db from "../services/firebase"
 import styles from "../styles/styles.module.scss";
 
-export default function Home() {
+type Donate = {
+  id: string;
+  donate: boolean;
+  lastDonate: Date;
+  image: string;
+};
+
+interface DonatersProps {
+  donaters: string;
+}
+
+export default function Home({ donaters }: DonatersProps) {
+  const [dtrs, setDtrs] = useState<Donate[]>(JSON.parse(donaters));
+
   return (
     <>
       <Head>
@@ -23,13 +39,11 @@ export default function Home() {
             <span>100% free</span> e online.
           </p>
         </section>
+        {dtrs.length !== 0 && <h3>Donaters</h3>}
         <div className={styles.donaters}>
-          <Image
-            src="/images/steve.png"
-            alt="User 1"
-            width={100}
-            height={100}
-          />
+          {dtrs.map((donater) => (
+            <Image key={donater.id} src={donater.image} alt="Donater" width={50} height={50}/>
+          ))}
         </div>
       </main>
     </>
@@ -37,11 +51,16 @@ export default function Home() {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
+  const donaters = await getDocs(collection(db, "users")).then((donaters) => {
+    return JSON.stringify(
+      donaters.docs.map((donater) => ({ id: donater.id, ...donater.data() }))
+    );
+  });
 
   return {
     props: {
-
+      donaters,
     },
-    revalidate: 60 * 60
-  }
-}
+    revalidate: 60 * 60,
+  };
+};
